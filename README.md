@@ -44,11 +44,11 @@ A feature-rich authentication via Google and GitHub OAuth, real-time chat applic
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/ajaykumar2pp/Chat-APP-2
+   git clone https://github.com/ajaykumar2pp/Chat-APP-NodeJS
    ```
 2. Navigate to the project directory:
    ```bash
-    cd chat-app-2
+    cd chat-app-nodejs
    ```
 3. Install dependencies:
    ```bash
