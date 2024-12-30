@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="/images/chat-icon.svg">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <title>Chat APP</title>
+</head>
+
+<body>
+    <div class="container ">
+
+        <div id="chat-container">
+            <!-- Navbar -->
+            <div class="row mb-3 mt-3 app justify-content-center align-items-center">
+                <div class="col-md-12 text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <img src="<%= user.image %>" alt="User Image" draggable="false"
+                            class="user-image" />
+                        <h5 class="welcome-text">
+                            Welcome, <%= user.username %>
+                        </h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+
+                <!-- Chat box  -->
+                <div class="col-md-8 col-sm-12 bg-light rounded shadow-sm p-2 mb-sm-3 mb-md-3 chat-box">
+                    <div id="chat-header" class="mt-2 text-muted">
+                        <span id="welcome-message" class="text-success fw-bold ms-2">• <%= user.username %></span>
+                        <span id="typing-indicator" class="fst-italic ms-4"></span>
+
+                        <!-- <span class="text-success fw-bold ">• Welcome Ajay</span>
+                        <span class="fst-italic ms-4">Mala typing...</span> -->
+                    </div>
+
+                    <!-- Chat messages -->
+                    <div id="chat-messages" class="border rounded chat">
+
+                        <!-- User notification -->
+                        <!-- <div id="notification">
+                            <p>
+                                Ajay has joined the chat.
+                            </p>
+                        </div> -->
+
+                    </div>
+
+
+                    <!-- Chat Form -->
+                    <form class="input-group mt-3" id="message-form">
+                        <input type="text" id="message-input" class="form-control custom-input"
+                            placeholder="Type a message..." autocomplete="off">
+                        <button id="send-btn" class="btn btn-sm btn-success">Send</button>
+                    </form>
+                </div>
+
+                <!-- User list  -->
+                <div class="col-md-4 col-sm-12 bg-white rounded shadow-sm mt-sm-3 mt-md-0 mb-3">
+                    <div class="user-list">
+                        <h6 class="bg-primary text-light text-center p-2 rounded">Online Users <span
+                                id="userCount">0</span></h6>
+                        <ul id="userList" class="list-group">
+                            <!-- User Name -->
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const userList = document.getElementById('userList');
+        const userCount = document.getElementById('userCount');
+
+        // Initially hide typing indicator 
+        typingIndicator.style.display = 'none';
+
+        // User Info (replace with dynamic data as needed)
+        const user = {
+            name: "<%= user.username %>",
+            image: "<%= user.image %>"
+        };
+
+        // console.log(user)
+
+        function displayMessage(user, message, date) {
+            if (!user || !message || !date) {
+                // console.error('Invalid message data:', { user, message, date });
+                return;
+            }
+
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', user.name === "<%= user.username %>" ? 'sender' : 'receiver');
+
+            messageElement.innerHTML = `
+           <img src="${user.image}" class="user-image" draggable="false" alt="${user.name}">
+            <div class="message-content">
+               <div>
+                   <div class="message-info">
+                   <strong>${user.name}</strong>
+                   <small>${date}</small>
+                   </div>
+                <div class="message-text">
+                ${message}
+                </div>
+             </div>
+            </div>
+        `;
+            chatMessages.appendChild(messageElement);
+
+            // Auto-scroll to the latest message
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+
+        // Send a chat message
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const message = messageInput.value.trim();
+            if (!message) {
+                alert('Please write a message.');
+                return;
+            }
+
+            // message and username to the console
+            // console.log(`User: ${user}, Message: ${message}`);
+
+            if (message) {
+                socket.emit('chatMessage', { user, message })
+
+                // Clear input
+                messageInput.value = '';
+                messageInput.focus();
+            }
+        })
+
+        // Display Previous Messages
+        socket.on('previousMessages', (messages) => {
+            // console.log("previousMessages", messages);
+
+            chatMessages.innerHTML = '';
+
+            messages.forEach((msg) => {
+                displayMessage(msg.user, msg.message, msg.date);
+            });
+
+            // Auto-scroll to the latest message
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        })
+
+        //    Receive chat message
+        socket.on('receiveMessage', (data) => {
+            // console.log(data)
+
+            displayMessage(data.user, data.message, data.date);
+        });
+
+        // Typing indicator logic
+        messageInput.addEventListener('input', () => {
+            const username = "<%= user.username %>";
+            // console.log(`${username} is typing...`);
+            socket.emit('typing', { user: username });
+        });
+
+        // Display typing indicator
+        socket.on('showTyping', (username) => {
+            // console.log(username)
+            typingIndicator.innerText = `${username.user} is typing...`;
+            typingIndicator.style.display = 'block';
+
+            // Hide typing indicator after 2 seconds
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+            }, 2000);
+        });
+
+
+        // Send Username to the server
+        socket.emit('userData', { username: "<%= user.username %>" })
+
+        // Listen for online users
+        socket.on('userList', (activeUsers) => {
+            // Clear the current user list
+            userList.innerHTML = '';
+
+            // Update the count of online users
+            userCount.textContent = Object.keys(activeUsers).length;
+
+            // Loop through the users and add them to the list
+            Object.values(activeUsers).forEach(username => {
+                const userItem = document.createElement('li');
+                userItem.className = 'list-group-item text-success f5';
+                userItem.innerText = `• ${username}`;
+                userList.appendChild(userItem);
+            });
+        })
+
+        // Notification User Message Show
+        socket.on('notification', (data) => {
+            // console.log(data.message)
+
+            //  A new user has joined!
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `<p class=" ">${data.message}</p>`;
+            chatMessages.appendChild(notification);
+
+
+            // Auto-scroll to the latest message
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        })
+
+    </script>
+</body>
+
+
+</html>
