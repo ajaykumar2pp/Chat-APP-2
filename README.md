@@ -122,7 +122,7 @@ src/
 
 
 ## 📷 Screenshots
-<a href="https://ibb.co/4J9Rhvp"><img src="https://i.ibb.co/Pt3GqXg/Chat-APP-12.png" alt="Chat-APP-12" border="0"></a>
+![Chat-APP-12](https://github.com/user-attachments/assets/a4607a43-6880-4159-8390-94dd78ec08c9)
 
 ## 🛡️ Security
 
